@@ -451,5 +451,5 @@ for Methodidx =7:9
     
     title(Labels(Methodidx),'FontWeight','Bold')
 end
-set(findobj(gcf,'type','axes'),'FontSize',21,'FontWeight','Bold', 'LineWidth', 1);
+set(findobj(gcf,'type','axes'),'FontSize',19,'FontWeight','Bold', 'LineWidth', 1);
 set(gcf,'Position',[          0         0        1600         700])
