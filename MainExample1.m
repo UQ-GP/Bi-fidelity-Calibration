@@ -14,13 +14,12 @@ InitialBudget = nl*1+RatioCost*nh
 InitialBudget0= nh0*RatioCost
 Budget=InitialBudget0+15
 Budget1=Budget+1;
-NoTrials=100;
 
 SensorTemperatureEveryTwoHours=reshape(SensorTemperature,120,[]);
 PhysData=mean(SensorTemperatureEveryTwoHours);
 load Example1.mat MultiDataInput SingleDataInput
 %{
-parfor id=1:NoTrials
+parfor id=1:100
     id
     [Dl,Dh]=GenerateNestedLHD(nl,nh,Dim,1e5);     
     [Dh0]=GenerateNestedLHD(nh0,nh0,Dim,1e5);     
@@ -30,7 +29,7 @@ parfor id=1:NoTrials
     Dh0s(:,:,id)=Dh0;    
 end
 
-for id =1:NoTrials
+for id =1:100
     rand
     disp(id)
     Dl=Dls(:,:,id);
@@ -67,17 +66,17 @@ end
 %Section 2: Bayesian optimization
 ZNBC_BC=1;   ZNBC_ID=0;   ZNBC_SR=2;
 ZMLFSSE=1;   ZLFSSE=0;
-for id=1:NoTrials
+for id=1:100
     disp('---')
     [T_MBC_AGP{id,1},Data_MBC_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZMLFSSE); 'MBC-AGP'
     [T_BC_AGP{id,1},Data_BC_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZLFSSE); 'BC-AGP'
     [T_MID_AGP{id,1},Data_MID_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_ID,ZMLFSSE); 'MID-AGP'
     [T_SR_AGP{id,1},Data_SR_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_SR,ZLFSSE); 'SR-AGP'
     [T_Nested{id,1},Data_Nested{id,1}] =CalibrationNested(MultiDataInput(id)); 'Nested'
-    [T_SVDAGP{id,1},Data_SVDAGP{id,1}] =CalibrationSVDAGP(MultiDataInput(id));'SVD-AGP'
+    [T_SVDAGP{id,1},Data_SVDAGP{id,1}] =CalibrationSVDAGP(MultiDataInput(id),0.99);'SVD-AGP'
     [T_BC_GP{id,1},Data_BC_GP{id,1}] =CalibrationBCGP(SingleDataInput(id)); 'BC-GP'
     [T_SR_GP{id,1},Data_SR_GP{id,1}] =CalibrationSRGP(SingleDataInput(id)); 'SR-GP'
-    [T_SVD{id,1},Data_SVD{id,1}] =CalibrationSVD(SingleDataInput(id));'SVD'
+    [T_SVD{id,1},Data_SVD{id,1}] =CalibrationSVD(SingleDataInput(id),0.99);'SVD'
     save Example1.mat
 end
 %%
@@ -280,7 +279,7 @@ for idxMethod=1:2
 end
 
 
-idxTrain=42;
+idxTrain=47;
 clear SSET_End
 for idxMethod=1:9
     Table=RecordTableShow{idxTrain,idxMethod};

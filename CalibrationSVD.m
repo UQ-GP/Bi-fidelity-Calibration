@@ -1,5 +1,5 @@
-function [RecordTable,RecordData]=CalibrationSVD(DataInput)
-percentage=0.99;
+function [RecordTable,RecordData]=CalibrationSVD(DataInput,percentage)
+% percentage=0.99;
 nugget=1e-6;
 Dh=DataInput.Dh;
 Yh=(DataInput.Yh)';%column vec

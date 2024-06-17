@@ -176,10 +176,10 @@ for id=1:100
     [T_MID_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_ID,ZMLFSSE); 'MID-AGP'
     [T_SR_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_SR,ZLFSSE); 'SR-AGP'
     [T_Nested{id,1}] =CalibrationNested(MultiDataInput(id)); 'Nested'
-    [T_SVDAGP{id,1}] =CalibrationSVDAGP(MultiDataInput(id));'SVD-AGP'
+    [T_SVDAGP{id,1}] =CalibrationSVDAGP(MultiDataInput(id),0.99);'SVD-AGP'
     [T_BC_GP{id,1}] =CalibrationBCGP(SingleDataInput(id)); 'BC-GP'
     [T_SR_GP{id,1}] =CalibrationSRGP(SingleDataInput(id)); 'SR-GP'
-    [T_SVD{id,1}] =CalibrationSVD(SingleDataInput(id));    'SVD'
+    [T_SVD{id,1}] =CalibrationSVD(SingleDataInput(id),0.99);    'SVD'
     save Example3.mat
 end
 %%
@@ -451,5 +451,5 @@ for Methodidx =7:9
     
     title(Labels(Methodidx),'FontWeight','Bold')
 end
-set(findobj(gcf,'type','axes'),'FontSize',19,'FontWeight','Bold', 'LineWidth', 1);
+set(findobj(gcf,'type','axes'),'FontSize',21,'FontWeight','Bold', 'LineWidth', 1);
 set(gcf,'Position',[          0         0        1600         700])
