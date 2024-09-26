@@ -31,7 +31,7 @@ TransformData_inv.m----------Gives the inverse of the Box-Cox, square root, or i
 
 Example1.mat----------Initial designs and numerical results for Example 1.
 Example1Size2.mat ----------Initial designs and numerical results for Example 1, larger design size 
-Example1GridData.mat----------Gives 11^3-point grid and the corresponding LF and HF data for Example 1.
+Example1GridData5.mat----------Gives 26^3-point grid and the corresponding LF and HF data for Example 1.
 Example2.mat----------Initial designs and numerical results for Example 2.
 Example2Size2.mat ----------Initial designs and numerical results for Example 2, larger design size 
 Example3.mat----------Initial designs and numerical results for Example 3.
