@@ -145,7 +145,7 @@ for idx2=1:9
 end
 Labels1={'(i) vs (i) ','(i) vs BC-AGP ','(i) vs ID-AGP ','(i) vs SR-AGP ' ' (i) vs Nested' ,'(i) vs SVD-AGP',' (i) vs BC-GP',' (i) vs SR-GP', '(i) vs SVD'}';
 
-Table2 =table(Labels,mean(DiffSSETrue_XhatsEnd)',ttest_p_Sh,mean(L2End)',ttest_p_L2)
+Table2 =table(Labels,mean(SSETrue_XhatsEnd)',ttest_p_Sh,mean(L2End)',ttest_p_L2)
 
 FontSize=24;
 figure,clf

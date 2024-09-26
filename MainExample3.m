@@ -269,11 +269,11 @@ title('(b)','FontSize',25,'FontWeight','bold')
 set(gcf,'position'  ,[          0         386        1920         510])
 set(gca,'yGrid','on','GridLineStyle','--')
 bp.GridLineStyle='--';
-ylim([   0.0002    0.6])
+ylim([   0.00008    0.6])
 set(gca,'YScale','log')
-yticks([ 0.0003  10.^[-3:-1] 0.5  ]  )
-yticklabels({'3\times10^{-4}' ,'10^{-3}','10^{-2}','10^{-1}' '0.5'})
- set(gca,'TickLabelInterpreter', 'tex');
+yticks([ 10.^[-4:-1] 0.5  ]  )
+ 
+set(gca,'TickLabelInterpreter', 'tex');
 
 Labels={'MBC-AGP','BC-AGP','MID-AGP', 'SR-AGP' ,  'Nested' ,'SVD-AGP','BC-GP','SR-GP','SVD'}';
 FontSize=24;
