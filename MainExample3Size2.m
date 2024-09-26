@@ -10,6 +10,7 @@ InitialBudget=nl*1+nh*RatioCost;
 InitialBudget0=nh0*RatioCost;
 Budget=InitialBudget+12;
 load Example3Size2.mat MultiDataInput SingleDataInput XTrue yh_XTrue PhysData
+% load Example3Size2.mat 
 % XTrue=[0.1 0.4];
 % [yh_XTrue]= Simulator(XTrue,2,Case);
 % std_error=(var(yh_XTrue)*0.0001)^0.5;
@@ -164,22 +165,19 @@ end
 
 %%
 %Section 2: Bayesian optimization
-
 ZNBC_BC=1;   ZNBC_ID=0;   ZNBC_SR=2;
-ZMLFSSE=1;   ZLFSSE=0;
-
+ZMLFSSE=1;   ZLFSSE=0; Val=1; percentage=0.99; 
 for id=1:100
-    disp('---')
-    
-    [T_MBC_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZMLFSSE); 'MBC-AGP'
-    [T_BC_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZLFSSE); 'BC-AGP'
-    [T_MID_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_ID,ZMLFSSE); 'MID-AGP'
-    [T_SR_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_SR,ZLFSSE); 'SR-AGP'
-    [T_Nested{id,1}] =CalibrationNested(MultiDataInput(id)); 'Nested'
-    [T_SVDAGP{id,1}] =CalibrationSVDAGP(MultiDataInput(id),0.99);'SVD-AGP'
-    [T_BC_GP{id,1}] =CalibrationBCGP(SingleDataInput(id)); 'BC-GP'
-    [T_SR_GP{id,1}] =CalibrationSRGP(SingleDataInput(id)); 'SR-GP'
-    [T_SVD{id,1}] =CalibrationSVD(SingleDataInput(id),0.99);    'SVD'
+    id
+    T_MBC_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZMLFSSE,Val); 'MBC-AGP'
+    T_BC_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZLFSSE,Val); 'BC-AGP'
+    T_MID_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_ID,ZMLFSSE,Val); 'MID-AGP'
+    T_SR_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_SR,ZLFSSE,Val); 'SR-AGP'
+    T_Nested{id,1} =CalibrationNested(MultiDataInput(id),Val); 'Nested'
+    T_SVDAGP{id,1} =CalibrationSVDAGP(MultiDataInput(id),Val,percentage);'SVD-AGP'
+    T_BC_GP{id,1} =CalibrationBCGP(SingleDataInput(id),Val); 'BC-GP'
+    T_SR_GP{id,1} =CalibrationSRGP(SingleDataInput(id),Val); 'SR-GP'
+    T_SVD{id,1} =CalibrationSVD(SingleDataInput(id),Val,percentage);'SVD'
     save Example3Size2.mat
 end
 %%
@@ -235,7 +233,8 @@ for idx2=1:9
     [ ~, ttest_p_L2(idx2,1)]=ttest(L2End(:,idx1),L2End(:,idx2));
 end
 
-ExampleEnvTable =table(Labels,mean(SSETrue_XhatsEnd)'-SSE_XMLE,ttest_p_Sh,mean(L2End)',ttest_p_L2)
+Table3 =table(Labels,mean(SSETrue_XhatsEnd)'-SSE_XMLE,ttest_p_Sh,mean(L2End)',ttest_p_L2)
+
 
 
 

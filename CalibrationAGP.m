@@ -1,4 +1,4 @@
-function [RecordTable,RecordData]=CalibrationAGP(DataInput,ZNBC,ZMLFSSEorZLFSSE)
+function [RecordTable,RecordData]=CalibrationAGP(DataInput,ZNBC,ZMLFSSEorZLFSSE,Val)
 % Bi-fidelity calibration methods that include MBC-AGP, BC-AGP, MID-AGP and SR-AGP methods
 %           Resph: is the HF SSE
 %           Respl: is the LF SSE or modified LF SSE
@@ -33,7 +33,7 @@ if ZMLFSSEorZLFSSE==1
         Yhkd=SameYh(:,kd);
         MatrixX=[Ones2,Ylkd];
         if Case==3
-            if all(Ylkd<10^(-12)) 
+            if all(Ylkd<10^(-12)) %only for Example 3
                 ai_bi(:,kd)=[0,1];
                 Sum_ErrorYlYh0=sum(abs(Yhkd-Ylkd)) ;
                 if Sum_ErrorYlYh0>0
@@ -58,12 +58,19 @@ Resplh= [Respl;Resph ];
 Budget=Budget-(nl*1+nh*RatioCost);
 
 if Dim==2
+    if(Val==1)
     nlevel=2501;
+    else
+    nlevel=3001;    
+    end
 elseif Dim==3
+    if(Val==1)
     nlevel=201;
+    else
+    nlevel=226;
+    end
 end
 AFPoints=(fullfact(nlevel*ones(1,Dim))-1)/(nlevel-1);
-XhatPoints=AFPoints;
 
 lb=0*ones(1,Dim);ub=1*ones(1,Dim);
 options=optimoptions('patternsearch','disp','off');
@@ -71,25 +78,38 @@ ZFit=1;
 %Bayesian optimization
 HistoryXhats=[];
 AFs(n,1)=0;
+if(Val==1)
+NoS=90;
+else
+NoS=100;    
+end
 while(1)
     %Fits the GP model and finds the minimum posterior mean
     if ZFit==1
-        [Objfval,Sigmal,Thetal,Rho,RatioSigmah,Sigmah,Thetah,phi,Mu,V,invV,invVRes,condV,PDF]= AGPFit(Dl,Respl,Dh,Resph,ZNBC,nugget);%@@@
+        [Objfval,Sigmal,Thetal,Rho,RatioSigmah,Sigmah,Thetah,phi,Mu,V,invV,invVRes,condV,PDF]= AGPFit(Dl,Respl,Dh,Resph,ZNBC,nugget,Val);%@@@
         ZFit=0;
         Objfvals(n,:)=Objfval;    Sigmals(n,:)=Sigmal;    Thetals(n,:)=Thetal;    Rhos(n,:)=Rho;
         RatioSigmahs(n,:)=RatioSigmah;    Sigmahs(n,:)=Sigmah;    Thetahs(n,:)=Thetah;
         phis(n,:)=phi;      Mus(n,:)=Mu;
         PDFs(n,:)=PDF;
     else
-        [V,invV,invVRes,condV,invVprime,invVprimeRes,ZData,F]=Fun_NegLogLikelihoodSame(Dl,Respl,Dh,Resph,ZNBC,Thetal,Thetah,Rho,RatioSigmah,phi,nl,nh,nugget,Sigmal,Sigmah,Mu);
+        [V,invV,invVRes,condV,~,~,ZData,F]=Fun_NegLogLikelihoodSame(Dl,Respl,Dh,Resph,ZNBC,Thetal,Thetah,Rho,RatioSigmah,phi,nl,nh,nugget,Sigmal,Sigmah,Mu);
         [~,~,absdZ]=TransformData([Respl;Resph],phi,ZNBC);
         Prod_dZ=prod(absdZ);
         PDF=mvnpdf(ZData,F*Mu,V)*Prod_dZ;
     end
-    NewXhatPoints=[XhatPoints;Dl;Dh;HistoryXhats];
+    [ZhPreds1,ZhVars1,~,~,Corrs1]=Fun_PredictionGrid(AFPoints,Level,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
+    [ZhPreds2,ZhVars2,~,~,~]=Fun_PredictionGrid([Dl;Dh],Level,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
+    [ZhPreds3,ZhVars3,~,~,Corrs3]=Fun_PredictionGrid(HistoryXhats,Level,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
+    ZhPreds=[ZhPreds1;ZhPreds2;ZhPreds3]; ZhCovs=[ZhVars1;ZhVars2;ZhVars3];
+    Fval_ZhQuantile=ZhPreds+norminv(0.9)*ZhCovs.^0.5;
+    [~,Sortidx]=sort(Fval_ZhQuantile);
+
+    NewXhatPoints=[AFPoints;Dl;Dh;HistoryXhats];
     Obj_Fun_ZhQuantile=@(x) Fun_ZhQuantile(x,2,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
-    [~,Sortidx]=sort(Obj_Fun_ZhQuantile(NewXhatPoints));
-    parfor id=1:90
+    XBestTry=zeros(NoS,Dim);
+    fBestTry=zeros(NoS,1);
+    parfor id=1:NoS
         [XBestTry(id,:),fBestTry(id,1)]= patternsearch(Obj_Fun_ZhQuantile,NewXhatPoints(Sortidx(id),:),[],[],[],[],lb,ub,[],options);
     end
     [MinZhQuantile,minidx]=min(fBestTry);
@@ -109,9 +129,13 @@ while(1)
         break
     end
     HistoryXhats=[HistoryXhats; Xhat_new];
+    [ZhPreds4,ZhVars4,~,~,Corrs4]=Fun_PredictionGrid(Xhat_new,Level,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
+    ZhPredsAF=[ZhPreds1;ZhPreds3;ZhPreds4]; ZhCovsAF=[ZhVars1;ZhVars3;ZhVars4]; CorrsAF=[Corrs1;Corrs3;Corrs4];
+
+    NewAFPoints=[AFPoints;HistoryXhats];
     %Adds a follow-up design point by Maximizing the AF
-    [NextPoint,NextLevel,AF]=SequentialRun_AEI(Budget,RatioCost,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,[AFPoints;HistoryXhats],Xhat_new,nugget);
-    AF;AFs(n+1,:)=AF;
+    [NextPoint,NextLevel,AF]=SequentialRun_AEI(Budget,RatioCost,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,NewAFPoints,Xhat_new,nugget,ZhPredsAF,ZhCovsAF,CorrsAF,Val);
+    AFs(n+1,:)=AF;
     disp(['Current budget=' num2str(Budget) '. The ' num2str(n+1) '-th run will be at point ' num2str(NextPoint,' %1.3f ') ' at Level ' num2str(NextLevel)  ])
     n=n+1;
     if NextLevel==1%Adds a LF design point
@@ -161,19 +185,25 @@ RecordData.Yh_Xhats=Yh_Xhats;
 RecordTable=table(D,Level,Resplh,Objfvals,Sigmals,Thetals,Rhos,RatioSigmahs,Sigmahs,Thetahs,phis,Mus,Xhats,Resphminhats,SSETrue_Xhats,condVs,PDFs,AFs);
 end
 %%
-function [Objfval,Sigmal,Thetal,Rho,RatioSigmah,Sigmah,Thetah,phi,Mu,V,invV,invVRes,condV,PDF]=AGPFit(Dl,Respl,Dh,Resph,ZNBC,nugget)%@@@
+function [Objfval,Sigmal,Thetal,Rho,RatioSigmah,Sigmah,Thetah,phi,Mu,V,invV,invVRes,condV,PDF]=AGPFit(Dl,Respl,Dh,Resph,ZNBC,nugget,Val)%@@@
 [nl,Dim]=size(Dl);
 [nh,~]=size(Dh);
-
+if(Val==1)
+HNoS=90;
+else
+HNoS=100;
+end
 if ZNBC==1
     lb=[    (0.25)*ones(1,Dim)       (0.25)*ones(1,Dim)     0         -6  -2 ];
     ub=[      (15)*ones(1,Dim)    (15)*ones(1,Dim)         2         2    2 ];
     Obj_NegLogL=@(Par) Fun_NegLogLikelihood(Dl,Respl,Dh,Resph,ZNBC,Par(1:Dim),Par((Dim+1):(2*Dim)),Par(2*Dim+1),10^Par(2*Dim+2),Par(2*Dim+3),nl,nh,nugget);
     nvar=numel(lb);
     Sobolset=sobolset(nvar,'Skip',1e3,'Leap',1e2);
-    
+    if(Val==1)
     StandardPoints=[net(Sobolset,7000*nvar)];%[0 1]
-    
+    else
+    StandardPoints=[net(Sobolset,8000*nvar)];%[0 1]    
+    end
     idxcolumn2=[2*Dim+1 2*Dim+2 2*Dim+3];
     idxcolumn1=setdiff(1:nvar,idxcolumn2);
     Points=StandardPoints;
@@ -185,11 +215,12 @@ elseif ZNBC==0 || ZNBC==2
     ub=[      (15)*ones(1,Dim)    (15)*ones(1,Dim)             2          2     ];
     Obj_NegLogL=@(Par) Fun_NegLogLikelihood(Dl,Respl,Dh,Resph,ZNBC,Par(1:Dim),Par((Dim+1):(2*Dim)),Par(2*Dim+1),10^Par(2*Dim+2),0,nl,nh,nugget);
     nvar=numel(lb);
-    Sobolset=sobolset(nvar,'Skip',1e3,'Leap',1e2);
-    
-    
+    Sobolset=sobolset(nvar,'Skip',1e3,'Leap',1e2);   
+    if(Val==1)
     StandardPoints=[net(Sobolset,7000*nvar)];
-    
+    else
+    StandardPoints=[net(Sobolset,8000*nvar)];    
+    end
     idxcolumn2=[2*Dim+1 2*Dim+2];
     idxcolumn1=setdiff(1:nvar,idxcolumn2);
     Points=StandardPoints;
@@ -204,18 +235,17 @@ fvals=zeros(SIZE,1);
 parfor id=1:SIZE
     fvals(id,1)=Obj_NegLogL(Points(id,:));
 end
-[sortfvals,Sortfvalsidx]=sort(fvals);
-clear Point
+[~,Sortfvalsidx]=sort(fvals);
 
-OPt_StandardPoints=[ StandardPoints(Sortfvalsidx(1:90),:)];
-Remain_StandardPoints=StandardPoints(Sortfvalsidx((90+1):end),:);
+OPt_StandardPoints=[ StandardPoints(Sortfvalsidx(1:HNoS),:)];
+Remain_StandardPoints=StandardPoints(Sortfvalsidx((HNoS+1):end),:);
 
 Count=0;
 for kd=1:size(Remain_StandardPoints,1)
     if min(pdist2(Remain_StandardPoints(kd,:),OPt_StandardPoints),[],2)>sqrt(nvar*0.1^2)
         OPt_StandardPoints=[OPt_StandardPoints; Remain_StandardPoints(kd,:)];
         Count=Count+1;
-        if Count==90
+        if Count==HNoS
             break
         end
     end
@@ -229,13 +259,16 @@ else
     Points(:,idxcolumn2) =[0.5 -6] +([1.5 0]-[0.5 -6]).*OPt_StandardPoints(:,idxcolumn2);   %[lb ub]      rho log10 gamma   [0.5 1.5] and [-6 0 ]
 end
 
-parfor id=1:size(OPt_StandardPoints,1)
+LengthPoints=size(Points,1);
+fBestTry=zeros(LengthPoints,1);
+XBestTry=zeros(LengthPoints,nvar);
+parfor id=1:LengthPoints
     [XBestTry(id,:),fBestTry(id,1)]= patternsearch(Obj_NegLogL,Points(id,:),[],[],[],[],lb,ub,[],options); %#ok<PFBNS>
 end
 [~,minidx]=min(fBestTry);
 ParIn=XBestTry(minidx,:) ;
 
-[Objfval,Sigmal,Thetal,Rho,RatioSigmah,Sigmah,Thetah,phi,Mu,V,invV,invVRes,condV,invVprime,invVprimeRes,ZData,F]=Obj_NegLogL(ParIn);
+[Objfval,Sigmal,Thetal,Rho,RatioSigmah,Sigmah,Thetah,phi,Mu,V,invV,invVRes,condV,~,~,ZData,F]=Obj_NegLogL(ParIn);
 [~,~,absdZ]=TransformData([Respl;Resph],phi,ZNBC);
 Prod_dZ=prod(absdZ);
 PDF=mvnpdf(ZData,F*Mu,V)*Prod_dZ;
@@ -282,7 +315,7 @@ V=Vprime*Sigmal;
 
 F=[    ones(nl,1) , zeros(nl,1);
     Rho*ones(nh,1) , ones(nh,1)];
-[invVprime,logdetVprime,condV]=invandlogdet(Vprime);
+[invVprime,~,condV]=invandlogdet(Vprime);
 if any(isnan(invVprime),'all')  ||  any(isinf(invVprime),'all')
     Objfval=Inf;Sigmal=[];Thetal=[];Rho=[];RatioSigmah=[];Sigmah=[];Thetah=[];phi=[];Mu=[];V=[];invV=[];invVRes=[];condV=[];invVprime=[];invVprimeRes=[];ZData=[];
     return
@@ -293,7 +326,6 @@ Res=ZData-F*Mu;
 invVprimeRes=invVprime*Res;
 invVRes=invVprimeRes/Sigmal;
 invV=invVprime/Sigmal;
-
 
 end
 
@@ -314,7 +346,11 @@ CrossCovs=[];
 
 if Level==1
     fl=[1 ,0 ] ;
-    rlT= [ Sigmal*ComputeRmatrix(TeD,Dl,Thetal) , Rho*Sigmal*ComputeRmatrix(TeD,Dh,Thetal)];
+    rlT1gridn=[ComputeRmatrix(TeD,Dl,Thetal)];
+    rlT2gridn=[ComputeRmatrix(TeD,Dh,Thetal)];
+    rhT2gridn=[ComputeRmatrix(TeD,Dh,Thetah)];
+    
+    rlT= [ Sigmal*rlT1gridn , Rho*Sigmal*rlT2gridn];
     rlT_invV=rlT*invV;
     ZlPreds=fl*Mu + rlT*invVRes;
     ZlVars=Sigmal*(1+nugget) - sum(rlT_invV.*rlT,2);%%column vector
@@ -323,7 +359,7 @@ if Level==1
     if(nargin>17)
         %Covariance and correlation coefficient between Zh(TeD)|Z and Zl(TeD)|Z
         fh=[Rho ,1];
-        rhT=[ Rho*Sigmal*ComputeRmatrix(TeD,Dl,Thetal) , Rho^2*Sigmal*ComputeRmatrix(TeD,Dh,Thetal)+Sigmah*ComputeRmatrix(TeD,Dh,Thetah) ] ;
+        rhT=[ Rho*Sigmal*rlT1gridn , Rho^2*Sigmal*rlT2gridn+Sigmah*rhT2gridn ] ;
         rhT_invV=rhT*invV;
         ZhPreds=fh*Mu + rhT*invVRes;
         ZhVars= Rho^2*Sigmal + Sigmah*(1+nugget) - sum(rhT_invV.*rhT,2);%column vector
@@ -347,17 +383,60 @@ end
 
 end
 %%
-function [NextPoint,NextLevel,AF]=SequentialRun_AEI(Budget,RatioCost,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,NewAFPoints,Xhat_new,nugget)
+function [ZhPreds,ZhVars,ZlPreds,ZlVars,Corrs,CrossCovs]=Fun_PredictionGrid(TeD,Level,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget)
+ZhPreds=[];
+ZhVars=[];
+ZlPreds=[];
+ZlVars=[];
+Corrs=[];
+CrossCovs=[];
+
+rlT1gridn=[ComputeRmatrix(TeD,Dl,Thetal)];
+rlT2gridn=[ComputeRmatrix(TeD,Dh,Thetal)];
+rhT2gridn=[ComputeRmatrix(TeD,Dh,Thetah)];
+fl=[1 ,0 ] ;
+rlT= [ Sigmal*rlT1gridn , Rho*Sigmal*rlT2gridn];
+rlT_invV=rlT*invV;
+ZlPreds=fl*Mu + rlT*invVRes;
+ZlVars=Sigmal*(1+nugget) - sum(rlT_invV.*rlT,2);%%column vector
+ZlVars=max(ZlVars,0);
+
+%Covariance and correlation coefficient between Zh(TeD)|Z and Zl(TeD)|Z
+fh=[Rho ,1];
+rhT=[ Rho*Sigmal*rlT1gridn , Rho^2*Sigmal*rlT2gridn+Sigmah*rhT2gridn ] ;
+rhT_invV=rhT*invV;
+ZhPreds=fh*Mu + rhT*invVRes;
+ZhVars= Rho^2*Sigmal + Sigmah*(1+nugget) - sum(rhT_invV.*rhT,2);%column vector
+ZhVars=max(ZhVars,0);
+
+CrossCovs=Rho*Sigmal*(1) - sum(rlT_invV.*rhT,2);%column vector
+Corrs=CrossCovs./ ((ZlVars).^0.5) ./ ((ZhVars).^0.5);%column vector
+Corrs(((ZhVars==0) | (ZlVars==0)  ))=0;%column vector
+Corrs=max(min(Corrs,1),-1);
+
+end
+%%
+function [NextPoint,NextLevel,AF]=SequentialRun_AEI(Budget,RatioCost,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,NewAFPoints,Xhat_new,nugget,ZhPredsAF,ZhCovsAF,CorrsAF,Val)
 Dim=size(Dl,2);
 lb=0*ones(1,Dim);ub=1*ones(1,Dim);
 options=optimoptions('patternsearch','disp','off');
 minZhRef=Fun_PredictionZ(Xhat_new,2,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
+if(Val==1) 
+NoS=90;
+else
+NoS=100;
+end
 if Budget<RatioCost
     
     NextLevel=1;
+    
+    [fval_MinusAEI,~]=Fun_MinusAEIGrid(NewAFPoints,minZhRef,RatioCost,Dl,Dh,ZhPredsAF,ZhCovsAF,CorrsAF);
+    [~,Sortidx]=sort(fval_MinusAEI);
+
     Obj_Fun_MinusAEI=@(x) Fun_MinusAEI(x,minZhRef,RatioCost,NextLevel,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
-    [fBest,Sortidx]=sort(Obj_Fun_MinusAEI(NewAFPoints));
-    parfor id=1:90
+    XBestTry=zeros(NoS,Dim);
+    fBestTry=zeros(NoS,1);
+    parfor id=1:NoS
         [XBestTry(id,:),fBestTry(id,1)]= patternsearch(Obj_Fun_MinusAEI,NewAFPoints(Sortidx(id),:),[],[],[],[],lb,ub,[],options);
     end
     [fBest,minidx]=min(fBestTry);
@@ -365,20 +444,29 @@ if Budget<RatioCost
     AF=-fBest;
     
 else
+    
     Level1=1;
-    Obj_Fun_MinusAEI1=@(x) Fun_MinusAEI(x,minZhRef,RatioCost,Level1,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
-    [fval_MinusAEI,fval_MinusEI]=Obj_Fun_MinusAEI1(NewAFPoints);
+
+    [fval_MinusAEI,fval_MinusEI]=Fun_MinusAEIGrid(NewAFPoints,minZhRef,RatioCost,Dl,Dh,ZhPredsAF,ZhCovsAF,CorrsAF);
     [~,Sortidx]=sort(fval_MinusAEI);
-    parfor id=1:90
+    
+    Obj_Fun_MinusAEI1=@(x) Fun_MinusAEI(x,minZhRef,RatioCost,Level1,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
+    XBestTry=zeros(NoS,Dim);
+    fBestTry=zeros(NoS,1);
+    parfor id=1:NoS
         [XBestTry(id,:),fBestTry(id,1)]= patternsearch(Obj_Fun_MinusAEI1,NewAFPoints(Sortidx(id),:),[],[],[],[],lb,ub,[],options);
     end
     [fval_MinusAEI1,minidx]=min(fBestTry);
     NextPoint1=XBestTry(minidx,:) ;
-    
+
     Level2=2;
-    Obj_Fun_MinusAEI2=@(x) Fun_MinusAEI(x,minZhRef,RatioCost,Level2,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
+
     [~,Sortidx]=sort(fval_MinusEI);
-    parfor id=1:90
+
+    Obj_Fun_MinusAEI2=@(x) Fun_MinusAEI(x,minZhRef,RatioCost,Level2,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
+    XBestTry=zeros(NoS,Dim);
+    fBestTry=zeros(NoS,1);    
+    parfor id=1:NoS
         [XBestTry(id,:),fBestTry(id,1)]= patternsearch(Obj_Fun_MinusAEI2,NewAFPoints(Sortidx(id),:),[],[],[],[],lb,ub,[],options);
     end
     [fval_MinusAEI2,minidx]=min(fBestTry);
@@ -393,6 +481,19 @@ end
 
 end
 %%
+function [fval_MinusAEI,fval_MinusEIs]=Fun_MinusAEIGrid(TeD,MinZhRef,RatioCost,Dl,Dh,ZhPreds,ZhCovs,Corrs)
+
+Bias=MinZhRef-ZhPreds;
+SD=ZhCovs.^0.5;
+BOSD=Bias./SD;
+EIs=Bias.*normcdf(BOSD) +SD.*normpdf(BOSD);
+fvalAEIs=EIs.*Corrs*RatioCost;
+fvalAEIs(  [ZhCovs==0] | [ min(pdist2(TeD,Dl),[],2) < 10^(-3)] |   [min(pdist2(TeD,Dh),[],2) < 10^(-3)] |  [Corrs < 0]      )=0; %1 and 3 and 4 and 5
+fval_MinusAEI=-fvalAEIs;
+EIs( [ZhCovs==0] | [min(pdist2(TeD,Dh),[],2) < 10^(-3)])=0;
+fval_MinusEIs=-EIs;
+end
+%%
 function [fval_MinusAEI,fval_MinusEIs,Corrs,ZhCovs]=Fun_MinusAEI(TeD,MinZhRef,RatioCost,AEILevel,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget)
 
 if AEILevel==2
@@ -401,7 +502,8 @@ if AEILevel==2
     [ZhPreds,ZhCovs]=Fun_PredictionZ(TeD,TeDLevel2,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget);
     Bias=MinZhRef-ZhPreds;
     SD=ZhCovs.^0.5;
-    EIs=Bias.*normcdf(Bias./SD) +SD.*normpdf(Bias./SD);
+    BOSD=Bias./SD;
+    EIs=Bias.*normcdf(BOSD) +SD.*normpdf(BOSD);
     fvalAEIs=EIs.*Corrs*RatioCost1;
     fvalAEIs(  [ZhCovs==0] |  (min(pdist2(TeD,Dh),[],2) < 10^(-3))         ) =0;
 elseif AEILevel==1
@@ -410,9 +512,10 @@ elseif AEILevel==1
     [ZhPreds,ZhCovs,~,~,Corrs]=Fun_PredictionZ(TeD,TeDLevel1,Dl,Respl,Dh,Resph,Sigmal,Thetal,Rho,Sigmah,Thetah,phi,ZNBC,Mu,invV,invVRes,nugget,ForAEI);
     Bias=MinZhRef-ZhPreds;
     SD=ZhCovs.^0.5;
-    EIs=Bias.*normcdf(Bias./SD) +SD.*normpdf(Bias./SD);
+    BOSD=Bias./SD;
+    EIs=Bias.*normcdf(BOSD) +SD.*normpdf(BOSD);
     fvalAEIs=EIs.*Corrs*RatioCost;
-    fvalAEIs(  [ min(pdist2(TeD,Dl),[],2) < 10^(-3)] |   [min(pdist2(TeD,Dh),[],2) < 10^(-3)] |  [Corrs < 0]      )=0; %1 and 3 and 4 and 5
+    fvalAEIs( [ZhCovs==0] | [ min(pdist2(TeD,Dl),[],2) < 10^(-3)] |   [min(pdist2(TeD,Dh),[],2) < 10^(-3)] |  [Corrs < 0]      )=0; %1 and 3 and 4 and 5
 end
 fval_MinusAEI=-fvalAEIs;
 fval_MinusEIs=-EIs;

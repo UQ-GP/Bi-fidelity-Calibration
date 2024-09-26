@@ -18,6 +18,7 @@ Budget1=Budget+1;
 SensorTemperatureEveryTwoHours=reshape(SensorTemperature,120,[]);
 PhysData=mean(SensorTemperatureEveryTwoHours);
 load Example1Size2.mat MultiDataInput SingleDataInput
+% load Example1Size2.mat
 %{
 parfor id=1:100
     id
@@ -65,18 +66,18 @@ end
 %%
 %Section 2: Bayesian optimization
 ZNBC_BC=1;   ZNBC_ID=0;   ZNBC_SR=2;
-ZMLFSSE=1;   ZLFSSE=0;
+ZMLFSSE=1;   ZLFSSE=0; Val=1; percentage=0.99; 
 for id=1:100
-    disp('---')
-    [T_MBC_AGP{id,1},Data_MBC_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZMLFSSE); 'MBC-AGP'
-    [T_BC_AGP{id,1},Data_BC_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZLFSSE); 'BC-AGP'
-    [T_MID_AGP{id,1},Data_MID_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_ID,ZMLFSSE); 'MID-AGP'
-    [T_SR_AGP{id,1},Data_SR_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_SR,ZLFSSE); 'SR-AGP'
-    [T_Nested{id,1},Data_Nested{id,1}] =CalibrationNested(MultiDataInput(id)); 'Nested'
-    [T_SVDAGP{id,1},Data_SVDAGP{id,1}] =CalibrationSVDAGP(MultiDataInput(id),0.99);'SVD-AGP'
-    [T_BC_GP{id,1},Data_BC_GP{id,1}] =CalibrationBCGP(SingleDataInput(id)); 'BC-GP'
-    [T_SR_GP{id,1},Data_SR_GP{id,1}] =CalibrationSRGP(SingleDataInput(id)); 'SR-GP'
-    [T_SVD{id,1},Data_SVD{id,1}] =CalibrationSVD(SingleDataInput(id),0.99);'SVD'
+    id
+    [T_MBC_AGP{id,1},Data_MBC_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZMLFSSE,Val); 'MBC-AGP'
+    [T_BC_AGP{id,1},Data_BC_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZLFSSE,Val); 'BC-AGP'
+    [T_MID_AGP{id,1},Data_MID_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_ID,ZMLFSSE,Val); 'MID-AGP'
+    [T_SR_AGP{id,1},Data_SR_AGP{id,1}] =CalibrationAGP(MultiDataInput(id),ZNBC_SR,ZLFSSE,Val); 'SR-AGP'
+    [T_Nested{id,1},Data_Nested{id,1}] =CalibrationNested(MultiDataInput(id),Val); 'Nested'
+    [T_SVDAGP{id,1},Data_SVDAGP{id,1}] =CalibrationSVDAGP(MultiDataInput(id),Val,percentage);'SVD-AGP'
+    [T_BC_GP{id,1},Data_BC_GP{id,1}] =CalibrationBCGP(SingleDataInput(id),Val); 'BC-GP'
+    [T_SR_GP{id,1},Data_SR_GP{id,1}] =CalibrationSRGP(SingleDataInput(id),Val); 'SR-GP'
+    [T_SVD{id,1},Data_SVD{id,1}] =CalibrationSVD(SingleDataInput(id),Val,percentage);'SVD'
     save Example1Size2.mat
 end
 %%
@@ -87,8 +88,8 @@ Labels={'MBC-AGP','BC-AGP','MID-AGP','SR-AGP', 'Nested','SVD-AGP','BC-GP','SR-GP
 RecordTableShow=[T_MBC_AGP(idx)  T_BC_AGP(idx)   T_MID_AGP(idx)  T_SR_AGP(idx)   T_Nested(idx)  T_SVDAGP(idx) T_BC_GP(idx)  T_SR_GP(idx)              T_SVD(idx)     ];
 RecordDataShow=[Data_MBC_AGP(idx)  Data_BC_AGP(idx)  Data_MID_AGP(idx)  Data_SR_AGP(idx)    Data_Nested(idx) Data_SVDAGP(idx)   Data_BC_GP(idx)  Data_SR_GP(idx)   Data_SVD(idx)   ];
 
-XMLE= [  0.458078384399414         0.971454620361328                         1 ];
-SSE_XMLE =3.5264931476456; 
+XMLE= [0.458063954892366            0.971435546875         0.999999502430791];
+SSE_XMLE =3.52649277295353; 
 
 SimMin= [ 0.12  0.0004   0];
 SimMax= [  0.3   0.001   0.975];
@@ -122,7 +123,7 @@ for idxMethod=9:-1:1
             TrueSSE_Xhats_Budget(1:Budget,idxMethod,idxTrain) = interp1(Budget_iter,SSETrue_Xhats_iter,1:Budget);
             L2s_Xhats_Budget(1:Budget,idxMethod,idxTrain)=interp1(Budget_iter,L2s_iter,1:Budget);
         elseif idxMethod==5 || idxMethod==6
-            deleteLFidx=(nl+nh+1):2:30;
+            deleteLFidx=(nl+nh+1):2:size(Table,1);
             Budget_iter(deleteLFidx,:)=[];
             SSETrue_Xhats_iter(deleteLFidx,:)=[];
             L2s_iter(deleteLFidx,:)=[];
@@ -143,7 +144,7 @@ for idx2=1:9
         [ ~, ttest_p_L2(idx2,1)]=ttest(L2End(:,idx1),L2End(:,idx2));
 end
 Labels1={'(i) vs (i) ','(i) vs BC-AGP ','(i) vs MID-AGP ','(i) vs SR-AGP ' ' (i) vs Nested' ,'(i) vs SVDAGP', ' (i) vs BC-GP',' (i) vs SR-GP',' (i) vs SVD'}';
-Table2 =table(Labels1,mean(SSETrue_XhatsEnd)',ttest_p_Sh,mean(L2End)',ttest_p_L2)
+Table1 =table(Labels1,mean(SSETrue_XhatsEnd)',ttest_p_Sh,mean(L2End)',ttest_p_L2)
 htmlGray = [128 128 128]/255;
 htmlGreen =[0.4660 0.6740 0.1880];
 

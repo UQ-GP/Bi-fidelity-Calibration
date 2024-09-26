@@ -11,9 +11,10 @@ InitialBudget0=nh0*RatioCost
 Budget=InitialBudget0+20
 Budget1=Budget
 load Example2Size2.mat  Dls Dhs Dh0s XTrue yh_XTrue PhysData SSE_XTrue XMLE SSE_XMLE  MultiDataInput SingleDataInput
+% load Example2Size2.mat 
 %{
 XTrue=rand(1,Dim);
-yh_XTrue= Simulator(XTrue,2,Case)
+yh_XTrue= Simulator(XTrue,2,Case);
 std_error=(var(yh_XTrue)*0.0001)^0.5;
 PhysData=yh_XTrue+normrnd(0,std_error,size(yh_XTrue));
 SSE_XTrue=sum([yh_XTrue-PhysData].^2)
@@ -73,18 +74,21 @@ end
 %%
 %Section 2: Bayesian optimization
 ZNBC_BC=1;   ZNBC_ID=0;   ZNBC_SR=2;
-ZMLFSSE=1;   ZLFSSE=0;
+ZMLFSSE=1;   ZLFSSE=0; Val=1; percentage=0.99; percentage2=0.998;
 for id=1:100
     id
-    T_MBC_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZMLFSSE); 'MBC-AGP'
-    T_BC_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZLFSSE); 'BC-AGP'
-    T_MID_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_ID,ZMLFSSE); 'MID-AGP'
-    T_SR_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_SR,ZLFSSE); 'SR-AGP'
-    T_Nested{id,1} =CalibrationNested(MultiDataInput(id)); 'Nested'
-    T_SVDAGP{id,1} =CalibrationSVDAGP(MultiDataInput(id),0.99);'SVD-AGP'
-    T_BC_GP{id,1} =CalibrationBCGP(SingleDataInput(id)); 'BC-GP'
-    T_SR_GP{id,1} =CalibrationSRGP(SingleDataInput(id)); 'SR-GP'
-    T_SVD{id,1} =CalibrationSVD(SingleDataInput(id),0.99);'SVD'
+    T_MBC_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZMLFSSE,Val); 'MBC-AGP'
+    T_BC_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_BC,ZLFSSE,Val); 'BC-AGP'
+    T_MID_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_ID,ZMLFSSE,Val); 'MID-AGP'
+    T_SR_AGP{id,1} =CalibrationAGP(MultiDataInput(id),ZNBC_SR,ZLFSSE,Val); 'SR-AGP'
+    T_Nested{id,1} =CalibrationNested(MultiDataInput(id),Val); 'Nested'
+    T_SVDAGP{id,1} =CalibrationSVDAGP(MultiDataInput(id),Val,percentage);'SVD-AGP'
+    T_BC_GP{id,1} =CalibrationBCGP(SingleDataInput(id),Val); 'BC-GP'
+    T_SR_GP{id,1} =CalibrationSRGP(SingleDataInput(id),Val); 'SR-GP'
+    T_SVD{id,1} =CalibrationSVD(SingleDataInput(id),Val,percentage);'SVD'
+
+    T_SVDAGP2{id,1} =CalibrationSVDAGP(MultiDataInput(id),Val,percentage2);'SVD-AGP2'
+    T_SVD2{id,1} =CalibrationSVD(SingleDataInput(id),Val,percentage2);'SVD2'
     save Example2Size2.mat
 end
 %%
@@ -141,7 +145,7 @@ for idx2=1:9
 end
 Labels1={'(i) vs (i) ','(i) vs BC-AGP ','(i) vs ID-AGP ','(i) vs SR-AGP ' ' (i) vs Nested' ,'(i) vs SVD-AGP',' (i) vs BC-GP',' (i) vs SR-GP', '(i) vs SVD'}';
 
-Table3 =table(Labels,mean(DiffSSETrue_XhatsEnd)',ttest_p_Sh,mean(L2End)',ttest_p_L2)
+Table2 =table(Labels,mean(DiffSSETrue_XhatsEnd)',ttest_p_Sh,mean(L2End)',ttest_p_L2)
 
 FontSize=24;
 figure,clf
@@ -164,7 +168,7 @@ plot(1:Budget,meanTrueSSE_Xhats_Budget_SSEXMLE(1:Budget,9),':d','linewidth',line
 ylim([  1000     3000000])
 set(gca,'FontWeight','bold','FontSize',FontSize,'YScale','log')
 xlabel('Computational cost','FontWeight','normal')
-ylabel('Average $S_h(\hat{\textbf{x}}^*_{\mathbf{ML}})-2553$','Interpreter','latex','FontSize',32);
+ylabel('Average $S_h(\hat{\textbf{x}}^*_{\mathbf{ML}})-2552.5$','Interpreter','latex','FontSize',32);
 leg = legend(Labels,'NumColumns',3,'Location','northeast');
 leg.ItemTokenSize = [74,50];
 title('(a)','FontWeight','bold')
@@ -184,7 +188,7 @@ plot(1:Budget,meanL2_Budget(1:Budget,7),':s','linewidth',linewidth,'Color', 'r',
 plot(1:Budget,meanL2_Budget(1:Budget,8),'--h','linewidth',linewidth,'MarkerSize',MarkerSize,'MarkerIndices',[InitialBudget (InitialBudget+1):3:Budget Budget ]),hold on
 plot(1:Budget,meanL2_Budget(1:Budget,9),':d','linewidth',linewidth,'MarkerSize',MarkerSize,'MarkerIndices',[InitialBudget (InitialBudget+3):3:Budget Budget ]),hold on
 xlim([InitialBudget-0.1,Budget+0.1])
-ylim( [0.2400    0.66000 ])
+ylim( [0.2400    0.68000 ])
 xlabel('Computational cost','FontWeight','normal')
 title('(b)','FontWeight','bold')
 set(gca,'FontWeight','bold','FontSize',FontSize)

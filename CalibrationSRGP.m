@@ -1,4 +1,4 @@
-function [RecordTable,RecordData]=CalibrationSRGP(DataInput)
+function [RecordTable,RecordData]=CalibrationSRGP(DataInput,Val)
 % Single fidelity calibration method : SR-GP
 %           Resph: is a vector of HF response modeled as a GP
 %           Xhats: is MLE of the calibration parameter vector at all iterations
@@ -24,13 +24,19 @@ Resph=(mean((Yh-PhysData).^2,2)).^0.5;
 Budget =Budget-(n*RatioCost);
 
 if Dim==2
+    if(Val==1)
     nlevel=2501;
+    else
+    nlevel=3001;    
+    end
 elseif Dim==3
+    if(Val==1)
     nlevel=201;
+    else
+    nlevel=226;
+    end
 end
 AFPoints=(fullfact(nlevel*ones(1,Dim))-1)/(nlevel-1);
-XhatPoints=AFPoints;
-
 
 lb=0*ones(1,Dim);ub=1*ones(1,Dim);
 options=optimoptions('patternsearch','disp','off');
@@ -39,25 +45,42 @@ HistoryXhats=[];
 AFs(n,:)=0;
 %Bayesian optimization
 ZFit=1;
+if(Val==1)
+NoS=90;
+else
+NoS=100;    
+end
 while (1)
     if ZFit==1
-        [Mu,Sigma,Theta,invR,invRRes,condR,Objfval,PDF]=GPFit(Dh,Resph,nugget);
+        [Mu,Sigma,Theta,invR,invRRes,condR,~,PDF]=GPFit(Dh,Resph,nugget,Val);
         ZFit=0;
         Sigmas(n,:)=Sigma;    Thetas(n,:)=Theta;    Mus(n,:)=Mu;
         PDFs(n,:)=PDF;
+
+        [ZhPreds1,ZhCovs1,rT]=Fun_GPPrediction(AFPoints,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget);
         
     else
         [invR,invRRes,condR,FT,R]=Fun_NegLogLikelihood_Same(Dh,Resph,Theta,n,nugget,Mu,Sigma);
         PDF=mvnpdf(Resph,FT'*Mu,Sigma*R);
+
+        rT=[rT, ComputeRmatrix(AFPoints,Dh(n,:),Theta)];
+        [ZhPreds1,ZhCovs1]=Fun_GPPredictionGrid(AFPoints,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget,rT);
     end
-    NewXhatPoints=[XhatPoints;Dh;HistoryXhats];
-    ObjResphQuantilePreds=@(x) Fun_GPQuantilePrediction(x,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget);
+    NewXhatPoints=[AFPoints;Dh;HistoryXhats];
     
-    [~,Sortidx]=sort(ObjResphQuantilePreds(NewXhatPoints));
-    parfor id=1:90
-        [XBestTry(id,:),fBestTry(id,1)]= patternsearch(ObjResphQuantilePreds,NewXhatPoints(Sortidx(id),:),[],[],[],[],lb,ub,[],options);
+    [ZhPreds2,ZhCovs2]=Fun_GPPrediction(Dh,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget);
+    [ZhPreds3,ZhCovs3]=Fun_GPPrediction(HistoryXhats,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget);
+    ZhPreds=[ZhPreds1;ZhPreds2;ZhPreds3]; ZhCovs=[ZhCovs1;ZhCovs2;ZhCovs3];
+    Fval_ZhQuantile=ZhPreds+norminv(0.9)*ZhCovs.^0.5;
+    [~,Sortidx]=sort(Fval_ZhQuantile);
+    
+    ObjZhQuantilePreds=@(x) Fun_GPQuantilePrediction(x,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget);
+    XBestTry=zeros(NoS,Dim);
+    fBestTry=zeros(NoS,1);   
+    parfor id=1:NoS
+        [XBestTry(id,:),fBestTry(id,1)]= patternsearch(ObjZhQuantilePreds,NewXhatPoints(Sortidx(id),:),[],[],[],[],lb,ub,[],options);
     end
-    [Resphminhats(n,:),minidx]=min(fBestTry);
+    [Zhminhats(n,:),minidx]=min(fBestTry);
     Xhats(n,:)=XBestTry(minidx,:) ;
     Xhat_new=Xhats(n,:);
     %Stores GP model parameters and the MLE of the calibration parameter vector
@@ -72,13 +95,18 @@ while (1)
     end
     HistoryXhats=[HistoryXhats; Xhat_new];
     NewAFPoints=[AFPoints;HistoryXhats];
-    MinResphRefEI=Fun_GPPrediction(Xhats(n,:),Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget);
+
+    [MinZhRefEI,ZhCovs4]=Fun_GPPrediction(Xhat_new,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget);
+    ZhPredsAF=[ZhPreds1;ZhPreds3;MinZhRefEI]; ZhCovsAF=[ZhCovs1;ZhCovs3;ZhCovs4]; 
+
     %%%%%%%Maximizes the EI AF and adds a follow-up design point
-    MinusEIObj=@(TeD) Fun_MinusEI(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,MinResphRefEI,nugget);
-    fvals=MinusEIObj(NewAFPoints);
+    fvals=Fun_MinusEIGrid(NewAFPoints,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,MinZhRefEI,nugget,ZhPredsAF,ZhCovsAF);
     [~,Sortidx]=sort(fvals);
     
-    parfor id=1:90
+    MinusEIObj=@(TeD) Fun_MinusEI(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,MinZhRefEI,nugget);    
+    XBestTry=zeros(NoS,Dim);
+    fBestTry=zeros(NoS,1);    
+    parfor id=1:NoS
         [XBestTry(id,:),fBestTry(id,1)]= patternsearch(MinusEIObj,NewAFPoints(Sortidx(id),:),[],[],[],[],lb,ub,[],options);
     end
     [fBest,minidx]=min(fBestTry);
@@ -91,7 +119,6 @@ while (1)
     Level(n,:)=2;
     
     Resph(n,:)=(mean(  (Yh(n,:)-PhysData).^2))^0.5;
-    
     Budget=Budget-RatioCost ;
 end
 
@@ -111,14 +138,13 @@ RecordData.XTrue=XTrue;
 RecordData.PhysData=PhysData;
 RecordData.RatioCost=RatioCost;
 RecordData.Budget=Budget;
-RecordData.ZNBC=[];
 RecordData.Yh_Xhats=Yh_Xhats;
 
 %Stores GP model parameters and the MLE of the calibration parameter vector at all iterations with a table
-RecordTable=table(D,Level,Resplh,Sigmas,Thetas,Mus,Xhats,Resphminhats,SSETrue_Xhats,condRs,PDFs,AFs);
+RecordTable=table(D,Level,Resplh,Sigmas,Thetas,Mus,Xhats,Zhminhats,SSETrue_Xhats,condRs,PDFs,AFs);
 end
 %%
-function [Mu,Sigma,Theta,invR,invRRes,condR,Objfval,PDF]=GPFit(Dh,Resph,nugget)
+function [Mu,Sigma,Theta,invR,invRRes,condR,Objfval,PDF]=GPFit(Dh,Resph,nugget,Val)
 [n,Dim]=size(Dh);
 
 lb=[ (0.25)*ones(1,Dim) ];
@@ -126,37 +152,49 @@ ub=[ (15)*ones(1,Dim) ];
 ObjS=@(Par) Fun_NegLogLikelihood(Dh,Resph,Par,n,nugget);
 nvar=numel(ub);
 options=optimoptions('patternsearch','disp','off');
+if(Val==1)
+HNoS=90;
+else
+HNoS=100;
+end
 
 Sobolset=sobolset(nvar,'Skip',1e3,'Leap',1e2);
-StardardPoints=[net(Sobolset,7000*nvar)];
+if(Val==1)
+StandardPoints=[net(Sobolset,7000*nvar)];
+else
+StandardPoints=[net(Sobolset,8000*nvar)];    
+end
 
-SIZE=size(StardardPoints,1);
+SIZE=size(StandardPoints,1);
 fvals=zeros(SIZE,1);
 parfor id=1:SIZE
-    Point=lb + (ub-lb).*StardardPoints(id,:);
+    Point=lb + (ub-lb).*StandardPoints(id,:);
     fvals(id,1)=ObjS(Point);
 end
-[sortfvals,Sortfvalsidx]=sort(fvals);
+[~,Sortfvalsidx]=sort(fvals);
 
-OPt_StardardPoints=[ StardardPoints(Sortfvalsidx(1:90),:)];
-Remain_StardardPoints=StardardPoints(Sortfvalsidx((90+1):end),:);
+OPt_StandardPoints=[ StandardPoints(Sortfvalsidx(1:HNoS),:)];
+Remain_StandardPoints=StandardPoints(Sortfvalsidx((HNoS+1):end),:);
 Count=0;
-for kd=1:size(Remain_StardardPoints,1)
-    if min(pdist2(Remain_StardardPoints(kd,:),OPt_StardardPoints),[],2)>sqrt(nvar*0.1^2)
-        OPt_StardardPoints=[OPt_StardardPoints; Remain_StardardPoints(kd,:)];
+for kd=1:size(Remain_StandardPoints,1)
+    if min(pdist2(Remain_StandardPoints(kd,:),OPt_StandardPoints),[],2)>sqrt(nvar*0.1^2)
+        OPt_StandardPoints=[OPt_StandardPoints; Remain_StandardPoints(kd,:)];
         Count=Count+1;
-        if Count==90
+        if Count==HNoS
             break
         end
     end
 end
 
-parfor id=1:size(OPt_StardardPoints,1)
-    Point=lb+(ub-lb).*OPt_StardardPoints(id,:);
+LengthOPt_StandardPoints=size(OPt_StandardPoints,1);
+fBestTry=zeros(LengthOPt_StandardPoints,1);
+XBestTry=zeros(LengthOPt_StandardPoints,nvar);
+parfor id=1:LengthOPt_StandardPoints
+    Point=lb+(ub-lb).*OPt_StandardPoints(id,:);
     [XBestTry(id,:),fBestTry(id,1)]= patternsearch(ObjS,Point,[],[],[],[],lb,ub,[],options);
 end
 
-[fBest,minidx]=min(fBestTry);
+[~,minidx]=min(fBestTry);
 Parin=XBestTry(minidx,:) ;
 [Objfval,Mu,Sigma,Theta,invR,invRRes,condR,FT,R]=ObjS(Parin);
 PDF=mvnpdf(Resph,FT'*Mu,Sigma*R);
@@ -185,23 +223,31 @@ function [invR,invRRes,condR,FT,R]=Fun_NegLogLikelihood_Same(Dh,Resph,Theta,n,nu
 
 FT=ones(1,n) ;
 R=ComputeRmatrix2(Dh,Theta,nugget);
-[invR,logdetR,condR]=invandlogdet(R);
+[invR,~,condR]=invandlogdet(R);
 
 Res=Resph-Mu ;
 invRRes=invR*Res;
 
 if any(isnan(invR),'all') || any(isinf(invR),'all') || Sigma==0
-    fval=Inf;Mu=[];Sigma=[];Theta=[];invR=[];invRRes=[];condR=[];
+    invR=[];invRRes=[];condR=[];
     return
 end
 end
 %%
-function [RespPreds,RespCovs]=Fun_GPPrediction(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget)
+function [ZhPreds,ZhCovs,rT]=Fun_GPPrediction(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget)
 rT=ComputeRmatrix(TeD,Dh,Theta);
 rT_invR=rT*invR;
-RespPreds=Mu + rT*invRRes;
-RespCovs =Sigma * ( 1+nugget - sum(rT_invR.*rT,2) ) ;
-RespCovs=max(RespCovs,0);
+ZhPreds=Mu + rT*invRRes;
+ZhCovs =Sigma * ( 1+nugget - sum(rT_invR.*rT,2) ) ;
+ZhCovs=max(ZhCovs,0);
+end
+
+function [ZhPreds,ZhCovs]=Fun_GPPredictionGrid(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget,rT)
+% rT=ComputeRmatrix(TeD,Dh,Theta);
+rT_invR=rT*invR;
+ZhPreds=Mu + rT*invRRes;
+ZhCovs =Sigma * ( 1+nugget - sum(rT_invR.*rT,2) ) ;
+ZhCovs=max(ZhCovs,0);
 end
 %%
 function [RespQuantile]=Fun_GPQuantilePrediction(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget)
@@ -211,11 +257,21 @@ RespQuantile=RespPreds+norminv(0.9)*RespCovs.^0.5;
 end
 %%
 function Fval_MinusEI=Fun_MinusEI(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,minResph,nugget)
+[ZhPreds,ZhCovs]=Fun_GPPrediction(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget);
+SD=ZhCovs.^0.5;
+Bias=minResph-ZhPreds;
+BOSD=Bias./SD;
+EIfval=Bias.*normcdf(BOSD)+SD.*normpdf(BOSD);
+EIfval(   logical( [ZhCovs==0] |  min(pdist2(TeD,Dh),[],2) < 10^(-3)  )    )=0;
+Fval_MinusEI=-EIfval;
+end
 
-[RespPreds,RespCovs]=Fun_GPPrediction(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget);
-SD=RespCovs.^0.5;
-Bias=minResph-RespPreds;
-EIfval=Bias.*normcdf(Bias./SD)+SD.*normpdf(Bias./SD);
-EIfval(   logical( [RespCovs==0] |  min(pdist2(TeD,Dh),[],2) < 10^(-3)  )    )=0;
+function Fval_MinusEI=Fun_MinusEIGrid(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,minResph,nugget,ZhPreds,ZhCovs)
+% [ZhPreds,ZhCovs]=Fun_GPPrediction(TeD,Dh,Resph,Theta,Mu,Sigma,invR,invRRes,nugget);
+SD=ZhCovs.^0.5;
+Bias=minResph-ZhPreds;
+BOSD=Bias./SD;
+EIfval=Bias.*normcdf(BOSD)+SD.*normpdf(BOSD);
+EIfval(   logical( [ZhCovs==0] |  min(pdist2(TeD,Dh),[],2) < 10^(-3)  )    )=0;
 Fval_MinusEI=-EIfval;
 end
