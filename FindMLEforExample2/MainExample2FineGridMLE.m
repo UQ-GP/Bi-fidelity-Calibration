@@ -1,5 +1,5 @@
 clear,clc,format compact 
-load Example2.mat PhysData SSE_XTrue XTrue
+load Example2Data.mat PhysData SSE_XTrue XTrue
 Case=2;
 Dim=3; NL=21^Dim;
 Points=(fullfact(21*ones(1,Dim))-1)/20;
