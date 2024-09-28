@@ -1,9 +1,0 @@
-Modified second section of Example2No3.m after first section finished running
-added
-clear all
-load Example2XMLEFineGridOkOptTop20.mat
-
-Changed 'MeshTolerance',10^-4, to 'MeshTolerance',10^-3,
-
-Then ran second section
-

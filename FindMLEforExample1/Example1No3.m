@@ -5,13 +5,13 @@
 
 %Case=1;
 %Dim=3;
-%nlevel=11;
+%nlevel=24;
 %Points=(fullfact(nlevel*ones(1,Dim))-1)/(nlevel-1);
 %for id=1:size(Points,1)
 %    AllYh(id,:)=Simulator(Points(id,:),2,Case);
 %    AllYl(id,:)=Simulator(Points(id,:),1,Case);    
 %end
-%save Example1GridData.mat AllYh  AllYl  PhysData  Points
+%save Example1GridData4.mat 
 clear all
 load Example1GridData4.mat
 AllSl=sum((AllYl-PhysData).^2,2);
