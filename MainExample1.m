@@ -531,7 +531,7 @@ prctile(NormalizedL2_ShSlPlus,[ 50 90 ])%disp('0.5 0.9 quantile')
 %= @@@ B  
 
 %median and 0.05 quantile of the correlation between g_φ (S_l^+ (X)) and g_φ (S_h (X)) over the 100 trials 
-disp('median and 0.05 quantile of correlation between g_φ (S_l^+ (X)) and g_φ (S_h (X))')
+disp('0.05 quantile and median of correlation between g_φ (S_l^+ (X)) and g_φ (S_h (X))')
 TwoQuantilesofcorr_ZhZlPlus=prctile(corr_ZhZlPlus,[5 50 ])
 % = @@@C  
 
