@@ -525,9 +525,9 @@ end
 disp('‖S_h (∙)-S_l (∙)‖_2/‖S_h (∙)‖_2')
 NormalizedL2_ShSl=(L2_ShSl/Mean_Sh2)^0.5%@@@A 
 
-%The 0.5 and 0.9 quantiles of ‖S_h (∙)-S_l^+ (∙)‖_2/‖S_h (∙)‖_2
-disp('The 0.5 and 0.9 quantiles of ‖S_h (∙)-S_l^+ (∙)‖_2/‖S_h (∙)‖_2')
-prctile(NormalizedL2_ShSlPlus,[ 50 90 ])%disp('0.5 0.9 quantile')
+%The 0.5 and 0.95 quantiles of ‖S_h (∙)-S_l^+ (∙)‖_2/‖S_h (∙)‖_2
+disp('The 0.5 and 0.95 quantiles of ‖S_h (∙)-S_l^+ (∙)‖_2/‖S_h (∙)‖_2')
+prctile(NormalizedL2_ShSlPlus,[ 50 95 ])%disp('0.5 0.9 quantile')
 %= @@@ B  
 
 %median and 0.05 quantile of the correlation between g_φ (S_l^+ (X)) and g_φ (S_h (X)) over the 100 trials 
