@@ -233,8 +233,7 @@ for idx2=1:9
     [ ~, ttest_p_L2(idx2,1)]=ttest(L2End(:,idx1),L2End(:,idx2));
 end
 
-Table3 =table(Labels,mean(SSETrue_XhatsEnd)'-SSE_XMLE,ttest_p_Sh,mean(L2End)',ttest_p_L2)
-
+Table3 =table(Labels,mean(SSETrue_XhatsEnd)',ttest_p_Sh,mean(L2End)',ttest_p_L2)
 
 
 
