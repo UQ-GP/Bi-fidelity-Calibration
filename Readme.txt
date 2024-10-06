@@ -20,7 +20,6 @@ ComputeRmatrix2.m----------Computes the prior correlation matrix for a set of po
 EPBasicFile.idf----------Gives a basic EnergyPlus input editor file for running EnergyPlus simulations.
 EPWeather.epw---------- Includes Hong Kong weather data for use in the EnergyPlus simulations.
 GenerateNestedLHD.m----------Generates one pair of nested LHDs using the method described in Qian (2009). Reference: Qian, P. Z. G. (2009). Nested Latin hypercube designs. Biometrika, 96(4), 957–970.
-invandlogdet.m----------Gives the inverse and log determinant of a positive definite matrix.
 MainExample1.m----------Replicates the simulations and gives all results for Example 1.
 MainExample1Size2.m ----------Replicates the simulations and gives all results for Example 1, larger initial design size.
 MainExample2.m----------Replicates the simulations and gives all results for Example 2.
@@ -30,6 +29,7 @@ MainExample3Size2.m ----------Replicates the simulations and gives all results f
 Simulator.m----------Gives the HF and LF simulator outputs for Examples 1-3.
 TransformData.m----------Gives the Box-Cox, square root, or identity transformation, and the log absolute value of the Jacobian for the transformation.
 TransformData_inv.m----------Gives the inverse of the Box-Cox, square root, or identity transformation.
+invandlogdet.m----------Gives the inverse and log determinant of a positive definite matrix.
 
 Example1.mat----------Initial designs and numerical results for Example 1.
 Example1Size2.mat ----------Initial designs and numerical results for Example 1, larger initial design size 
