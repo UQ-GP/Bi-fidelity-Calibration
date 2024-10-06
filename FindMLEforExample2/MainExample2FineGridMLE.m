@@ -37,5 +37,5 @@ save Example2TrueMLEFine.mat
 clear all
 load Example2TrueMLEFine.mat
 options=optimoptions('patternsearch','MaxIterations',10^6,'MeshTolerance',10^-4,'TolFun',10^-6,'MaxFunEvals',10^8);
-[XMLE,SSE_XMLE] = patternsearch(SSHFun,XMLE,[],[],[],[],lb,ub,[],options)  ;
+[XMLEFineTuned,SSE_XMLEFineTuned] = patternsearch(SSHFun,XMLE,[],[],[],[],lb,ub,[],options)  ;
 save Example2TrueMLEFineTuned.mat
