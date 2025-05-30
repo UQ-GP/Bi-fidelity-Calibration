@@ -1,20 +1,19 @@
-function R=ComputeRmatrix2(Xs,Thetas,nuggetValue) 
+function R=ComputeRmatrix2(Xs,theta,nuggetValue) 
 if nargin==2
     nugget=1e-6;
 elseif nargin==3
     nugget=nuggetValue;
 end
-[nX,Dim]=size(Xs);
+[nXs,d]=size(Xs);
 
-
-R=ones(nX,nX);
-for id=1:Dim
-    x=Xs(:,id);    
-    y=Xs(:,id)';
-    r=abs(x-y) .*Thetas(id);
-    R=R.* [ exp(-r) .* (1+r) ] ;       
+R=ones(nXs,nXs);
+for i=1:d
+    x=Xs(:,i);    
+    y=Xs(:,i)';
+    r=abs(x-y).*theta(i);
+    R=R.*(exp(-r).*(1+r));       
 end
 
-R=R+ speye(nX)*nugget;
+R=R+speye(nXs)*nugget;
 
 end

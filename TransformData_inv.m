@@ -1,10 +1,9 @@
-function SS=TransformData_inv(Z,phi,ZNBC) 
+function SS=TransformData_inv(Z,phi,ID_BC_or_SR) 
 
-if ZNBC==0      %Indentity transformation
+if ID_BC_or_SR==0 %Identity transformation
     SS=Z;
-%     SS(Z<=0)=0;
     
-elseif ZNBC==1  %Box-Cox transformation
+elseif ID_BC_or_SR==1 %Box-Cox transformation
     if phi==0
         SS=exp(Z);
     elseif phi>0
@@ -15,9 +14,9 @@ elseif ZNBC==1  %Box-Cox transformation
         SS(Z>=-1/phi)=Inf;
     end
     
-elseif ZNBC==2 %Squared root transformation
+elseif ID_BC_or_SR==2 %Square root transformation
     SS=Z.^2;
-%     SS(Z<=0)=0;
+
 end
 
 end

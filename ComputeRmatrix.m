@@ -1,13 +1,13 @@
-function R=ComputeRmatrix(Xs,Ys,Thetas) 
-[nX,Dim]=size(Xs);
-[nY,~]=size(Ys);
+function R=ComputeRmatrix(Xs,Ys,theta) 
+[nXs,d]=size(Xs);
+[nYs,~]=size(Ys);
 
-R=ones(nX,nY);
-for id=1:Dim
-    x=Xs(:,id);    
-    y=Ys(:,id)';
-    r=abs(x-y) .*Thetas(id);
-    R=R.* [ exp(-r) .* (1+r) ];      
+R=ones(nXs,nYs);
+for i=1:d
+    x=Xs(:,i);    
+    y=Ys(:,i)';
+    r=abs(x-y).*theta(i);
+    R=R.*(exp(-r).*(1+r));      
 end
 
 end

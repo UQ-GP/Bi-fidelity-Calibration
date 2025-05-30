@@ -29,5 +29,4 @@ for idx=1:nsim
 end
 Dl=BestDesign;
 Dh=BestDesign(1:nh,:);
-end%GenerateNestedLHD
-
+end 

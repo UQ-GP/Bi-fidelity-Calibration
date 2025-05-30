@@ -1,10 +1,13 @@
-function [Z,SumLogdZ,absdZ]= TransformData(SS,phi,ZNBC) 
+function [Z,LogAbsJacobian]=TransformData(SS,phi,ID_BC_or_SR) 
 
-if ZNBC==0 %Indentity transformation
+if any(SS<=0,'all')
+    return
+end
+
+if ID_BC_or_SR==0 %Identity transformation
     Z=SS;   
-    dZ=1;%ones(size(SS));
-    
-elseif ZNBC==1      % Box-Cox transformation
+    dZ=1;    
+elseif ID_BC_or_SR==1 %Box-Cox transformation
     if phi~=0
         Z=(SS.^phi-1)/phi;
         dZ=SS.^(phi-1);
@@ -12,11 +15,10 @@ elseif ZNBC==1      % Box-Cox transformation
         Z=log(SS);    
         dZ=1./SS;
     end
-elseif ZNBC==2 %Squared root transformation
+elseif ID_BC_or_SR==2 %Square root transformation
     Z=SS.^0.5;    
-    dZ=1;%ones(size(SS));
+    dZ=1;
 end
-absdZ=abs(dZ);
-SumLogdZ=sum(log(absdZ)); %log of absolute of Jacobian
-% Prod_dZ=prod(absdZ); %absolute of Jacobian
+LogAbsJacobian=sum(log(dZ)); %log of absolute Jacobian = log of Jacobian
+
 end
