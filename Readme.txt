@@ -90,9 +90,10 @@ RecordTable=table(D,Level,SSEs,MaxAFVals,xhatstarMLs,Shminhats,ShxhatstarMLs,pls
 22.	Simulator.m — Gives the HF and LF simulator outputs for Examples 1-3.
 23.	TransformData.m — Gives the Box-Cox, square root, or identity transformation, and the log absolute value of the Jacobian for the transformation.
 24.	TransformData_inv.m — Gives the inverse of the Box-Cox, square root, or identity transformation.
-25.	ApproximateSh_SVD.m — Computes, for the 100 trials in Example 2, the true minimizer, minimum, and range over {0,0.05,…,1}^3 of S_{h,1}, the S_{h,1} value at the estimate of the calibration parameter vector given by the SVD method at termination, and other information needed to produce some numerical results stated in Appendix J. 
-26.	ApproximateSh_SVDAGP.m — Computes, for the 100 trials in Example 2, the true minimizer, minimum, and range over {0,0.05,…,1}^3 of S_{h,2}, the S_{h,2} value at the estimate of the calibration parameter vector given by the SVD-AGP method at termination, and other information needed to produce some numerical results stated in Appendix J.
+25.	ApproximateSh_SVD.m — Computes the results in Table J.1 and other numerical results stated in Appendix J.2. 
+26.	ApproximateSh_SVDAGP.m — Computes the results in Table J.2 and other numerical results stated in Appendix J.2 (you need to run ApproximateSh_SVD.m before running ApproximateSh_SVDAGP.m as ApproximateSh_SVD.m will generate some data needed to run ApproximateSh_SVDAGP.m). 
 27.	AnalyzeApproximateShData.m — Produces the numbers reported in Appendix J using the data obtained by running ApproximateSh_SVD.m and ApproximateSh_SVDAGP.m.
+28.     ComputeBstarAllExamples.m — Gives the range of Bstar and the MLE of ρ (computed from data from the initial design) for each combination of two methods (MBC-AGP or SR-AGP methods), 100-trial set (two sets per example), and example. You need to run ApproximateSh_SVDAGP.m to get Example2GridData.mat file. Otherwise, only results for Example 1 are given.   
 
 28.	Example1.mat — Contains the numerical results for Example 1.
 29.	Example1InputData.mat — Contains the initial designs and initial data for Example 1.
@@ -125,7 +126,7 @@ Step 2: Run MainExample2.m and MainExample2Size2.m.
 Step 1: Put all the MATLAB codes in a single folder.
 Step 2: Run MainExample3.m and MainExample3Size2.m.
 
-%%%%%%%%%%%%%% Step for obtaining the results at the end of Appendix J %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%% Step for obtaining the results in Appendix J.2 %%%%%%%%%%%%%%%%%%%
 Steps: Run ApproximateSh_SVD.m and then ApproximateSh_SVDAGP.m. Finally, run AnalyzeApproximateShData.m.
 
 Note: 
