@@ -182,7 +182,7 @@ grid on
 set(findobj(gca,'type','line'),'LineWidth',4)
 set(gcf,'position',[0 150 1886 631])
 set(findobj(gcf,'type','axes'),'FontWeight','Bold','LineWidth',3); 
-
+%%
 save Example3InputData.mat
 clear all
 load Example3InputData.mat xstar yhxstar w Shxstar xstarML ShxstarML MultiDataInput SingleDataInput    
@@ -276,20 +276,20 @@ end
 AverageSh=mean(ShxhatstarMLsEnd)'; AverageL2=mean(L2xhatstarMLsEnd)';
 Table3=table(Labels,AverageSh,ttest_pval_Sh,AverageL2,ttest_pval_L2)
 
-Labels2={'MBC-AGP          ','     BC-AGP         ','        MID-AGP       ','        SR-AGP   ','       Nested  ','        SVD-AGP','          BC-GP','        SR-GP',' SVD'}';
+Labels2={'MBC-AGP','\newline BC-AGP','MID-AGP','\newline SR-AGP','Nested','\newline SVD-AGP','BC-GP','\newline SR-GP','SVD'}';
 figure,clf
 subplot(121)
 boxplot(ShxhatstarMLsEndminusShxstarML,'Labels',Labels2)
 bp=gca; bp.FontSize=20;
-bpXAxisFontSize=17;
+bpXAxisFontSize=21;
 bp.XAxis.FontWeight='bold'; bp.XAxis.FontSize=bpXAxisFontSize;
 bp.YAxis.FontWeight='bold'; bp.YAxis.FontSize=23;
 ylim([0.00005,60])
 set(gca,'YScale','log')
-ylabel('$S_h(\hat{\textbf{x}}^*_{\mathbf{ML}})-$0.093939','FontWeight','bold','Interpreter','latex','FontSize',28);
+ylabel('$S_h(\hat{\textbf{x}}^*_{\mathbf{ML}})-$0.093939','Interpreter','latex','FontSize',28);
 set(findobj(gca,'type','line'),'LineWidth',2)
 title('(a)','FontSize',25,'FontWeight','bold')
-set(gca,'Position',[0.07 0.12 0.42 0.8])
+set(gca,'Position',[0.07 0.155 0.42 0.765])
 set(gca,'yGrid','on','GridLineStyle','--')
 yticks([10.^[-4:1] 50])
 yticklabels({'10^{-4}','10^{-3}','10^{-2}','10^{-1}','10^{0}','10^{1}','50'})
@@ -305,7 +305,7 @@ set(gca,'YScale','log')
 ylabel('$L_2(\hat{\textbf{x}}^*_{\mathbf{ML}})$','Interpreter','latex','FontSize',28);
 set(findobj(gca,'type','line'),'LineWidth',2)
 title('(b)','FontSize',25,'FontWeight','bold')
-set(gca,'Position',[0.575 0.12 0.42 0.8])
+set(gca,'Position',[0.575 0.155 0.42 0.765])
 set(gca,'yGrid','on','GridLineStyle','--')
 yticks([10.^[-4:-1] 0.5])
 yticklabels({'10^{-4}','10^{-3}','10^{-2}','10^{-1}','0.5'})
@@ -316,21 +316,31 @@ set(gcf,'position',[0 386 1920 510])
 htmlGray=[128 128 128]/255;
 htmlGreen=[0.4660 0.6740 0.1880];
 
+Jump=4;
+for i=1:9
+    JJ(i)= mean(log(meanInterpolatedShxhatstarMLsminusShxstarML(InitialBudget:Budget,i)));
+end
+[~,indicesJJ]=sort(JJ);
+for i=1:9
+    Shift=mod(find(indicesJJ==i),Jump);
+    II{i}=unique([InitialBudget (InitialBudget+Shift):Jump:Budget Budget]);        
+end
+
 figure,clf
 tiledlayout(1,2,'Padding','none','TileSpacing','none');
 nexttile
 FontSize1=24;
 linewidth=4;
 MarkerSize1=15;
-plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,1),'ko-','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget:3:Budget Budget]),hold on
-plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,2),'b:o','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerFaceColor','b','MarkerIndices',[InitialBudget (InitialBudget+2):2:Budget Budget])
-plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,3),'k^-','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget (InitialBudget):3:Budget Budget])
-plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,4),'--v','linewidth',linewidth,'color',htmlGray,'MarkerSize',MarkerSize1,'MarkerIndices',[(InitialBudget+1):2:Budget Budget])
-plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,5),':s','linewidth',linewidth,'color',htmlGreen,'MarkerFaceColor',htmlGreen,'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget:4:Budget])
-plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,6),'b-x','linewidth',linewidth,'MarkerSize',MarkerSize1+10,'MarkerIndices',[InitialBudget (InitialBudget+1):3:Budget Budget])
-plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,7),':rs','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget (InitialBudget+2):3:Budget Budget])
-plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,8),'--h','linewidth',linewidth,'color',[0.00,0.45,0.74],'MarkerFaceColor',[0.00,0.45,0.74],'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget (InitialBudget+1):3:Budget Budget])
-plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,9),':d','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget (InitialBudget+3):3:Budget Budget])
+plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,1),'ko-','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',II{1}),hold on
+plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,2),'b:o','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerFaceColor','b','MarkerIndices',II{2})
+plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,3),'k^-','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',II{3})
+plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,4),'--v','linewidth',linewidth,'color',htmlGray,'MarkerSize',MarkerSize1,'MarkerIndices',II{4})
+plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,5),':s','linewidth',linewidth,'color',htmlGreen,'MarkerFaceColor',htmlGreen,'MarkerSize',MarkerSize1,'MarkerIndices',II{5})
+plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,6),'b-x','linewidth',linewidth,'MarkerSize',MarkerSize1+10,'MarkerIndices',II{6})
+plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,7),':rs','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',II{7})
+plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,8),'--h','linewidth',linewidth,'color',[0.00,0.45,0.74],'MarkerFaceColor',[0.00,0.45,0.74],'MarkerSize',MarkerSize1,'MarkerIndices',II{8})
+plot(1:Budget,meanInterpolatedShxhatstarMLsminusShxstarML(1:Budget,9),':d','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',II{9})
 xlabel('Computational cost');
 set(gca,'YScale','log','FontSize',FontSize1,'FontWeight','bold','LineWidth',3);
 ylabel('Average $S_h(\hat{\textbf{x}}^*_{\mathbf{ML}})-$0.093939','Interpreter','latex','FontSize',32);
@@ -343,17 +353,26 @@ xticks(InitialBudget:2:Budget)
 xlim([InitialBudget,Budget])
 set(gca,'TickLabelInterpreter','tex');
 title('(a)','FontWeight','bold')
- 
+
+for i=1:9
+    JJ(i)= mean(log(meanInterpolatedL2xhatstarMLs(InitialBudget:Budget,i)));
+end
+[~,indicesJJ]=sort(JJ);
+for i=1:9
+    Shift=mod(find(indicesJJ==i),Jump);
+    II{i}=unique([InitialBudget (InitialBudget+Shift):Jump:Budget Budget]);
+end
+
 nexttile
-plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,1),'ko-','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget:3:Budget Budget]),hold on
-plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,2),'b:o','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerFaceColor','b','MarkerIndices',[InitialBudget (InitialBudget):2:Budget Budget])
-plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,3),'k^-','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget (InitialBudget):3:Budget Budget])
-plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,4),'--v','linewidth',linewidth,'color',htmlGray,'MarkerSize',MarkerSize1,'MarkerIndices',[(InitialBudget+1):2:Budget Budget])
-plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,5),':s','linewidth',linewidth,'color',htmlGreen,'MarkerFaceColor',htmlGreen,'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget:4:Budget Budget])
-plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,6),'b-x','linewidth',linewidth,'MarkerSize',MarkerSize1+10,'MarkerIndices',[InitialBudget (InitialBudget+1):3:Budget Budget])
-plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,7),':rs','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget (InitialBudget+2):3:Budget Budget])
-plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,8),'--h','linewidth',linewidth,'color',[0.00,0.45,0.74],'MarkerFaceColor',[0.00,0.45,0.74],'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget (InitialBudget+1):3:Budget Budget])
-plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,9),':d','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',[InitialBudget (InitialBudget+3):3:Budget Budget])
+plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,1),'ko-','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',II{1}),hold on
+plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,2),'b:o','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerFaceColor','b','MarkerIndices',II{2})
+plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,3),'k^-','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',II{3})
+plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,4),'--v','linewidth',linewidth,'color',htmlGray,'MarkerSize',MarkerSize1,'MarkerIndices',II{4})
+plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,5),':s','linewidth',linewidth,'color',htmlGreen,'MarkerFaceColor',htmlGreen,'MarkerSize',MarkerSize1,'MarkerIndices',II{5})
+plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,6),'b-x','linewidth',linewidth,'MarkerSize',MarkerSize1+10,'MarkerIndices',II{6})
+plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,7),':rs','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',II{7})
+plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,8),'--h','linewidth',linewidth,'color',[0.00,0.45,0.74],'MarkerFaceColor',[0.00,0.45,0.74],'MarkerSize',MarkerSize1,'MarkerIndices',II{8})
+plot(1:Budget,meanInterpolatedL2xhatstarMLs(1:Budget,9),':d','linewidth',linewidth,'MarkerSize',MarkerSize1,'MarkerIndices',II{9})
 xlabel('Computational cost');
 set(gca,'FontWeight','bold','FontSize',FontSize1);
 ylabel('Average $L_2(\hat{\textbf{x}}^*_{\mathbf{ML}})$','Interpreter','latex','FontSize',32);
