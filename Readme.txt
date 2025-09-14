@@ -83,7 +83,7 @@ RecordTable=table(D,Level,SSEs,MaxAFVals,xhatstarMLs,Shminhats,ShxhatstarMLs,pls
 15.	EPBasicFile.idf — Gives a basic EnergyPlus input editor file for running EnergyPlus simulations.
 16.	EPWeather.epw — Includes Hong Kong weather data for use in the EnergyPlus simulations.
 17.	Example1FindTrueMLE — Finds the true MLE of the calibration parameter vector for Example 1.
-18.	Example1GenerateGridData5forAppendixH — Computes the HF and LF outputs of the simulator for Example 1 at the points in the 26^3 grid {0,1/25,...,1}^3, and records the run times for all those simulation runs (the data are used to compute various integrals whose values are needed for the results reported in Appendix H, and the ratio of the average run times for the HF simulations to that for the LF simulations can be used to justify setting c_h/c_l=4).
+18.	Example1GenerateGridDataforAppendixH — Computes the HF and LF outputs of the simulator for Example 1 at the points in the 26^3 grid {0,1/25,...,1}^3, and records the run times for all those simulation runs (the data are used to compute various integrals whose values are needed for the results reported in Appendix H, and the ratio of the average run times for the HF simulations to that for the LF simulations can be used to justify setting c_h/c_l=4).
 19.	Example2FindTrueMLE — Finds the true MLE of the calibration parameter vector for Example 2.
 20.	GenerateNestedLHD.m — Generates one pair of nested LHDs using the method described in Qian (2009). Reference: Qian, P.Z.G. (2009) Nested Latin hypercube designs. Biometrika, 96(4), 957-970.
 21.	invandlogdet.m — Gives the inverse, log determinant, and condition number of a positive definite matrix.
@@ -92,26 +92,26 @@ RecordTable=table(D,Level,SSEs,MaxAFVals,xhatstarMLs,Shminhats,ShxhatstarMLs,pls
 24.	TransformData_inv.m — Gives the inverse of the Box-Cox, square root, or identity transformation.
 25.	ApproximateSh_SVD.m — Computes the results in Table J.1 and other numerical results stated in Appendix J.2. 
 26.	ApproximateSh_SVDAGP.m — Computes the results in Table J.2 and other numerical results stated in Appendix J.2 (you need to run ApproximateSh_SVD.m before running ApproximateSh_SVDAGP.m as ApproximateSh_SVD.m will generate some data needed to run ApproximateSh_SVDAGP.m). 
-27.	AnalyzeApproximateShData.m — Produces the numbers reported in Appendix J using the data obtained by running ApproximateSh_SVD.m and ApproximateSh_SVDAGP.m.
-28.     ComputeBstarAllExamples.m — Gives the range of Bstar and the MLE of ρ (computed from data from the initial design) for each combination of two methods (MBC-AGP or SR-AGP methods), 100-trial set (two sets per example), and example. You need to run ApproximateSh_SVDAGP.m to get Example2GridData.mat file. Otherwise, only results for Example 1 are given.   
+27.	AnalyzeApproximateShData.m — Produces the numbers reported in Appendix J.2 (Table J.1-J.2 in particular) using the data obtained by running ApproximateSh_SVD.m and ApproximateSh_SVDAGP.m.
+28.     ComputeBstarAllExamples.m — Gives the range of Bstar (see Equation (B.1)) and the range of the MLE of ρ (computed from the data from the initial design) for each combination of two methods (MBC-AGP or SR-AGP methods), 100-trial set (two sets per example), and example. You need to run ApproximateSh_SVD.m to get the Example2GridData.mat file. Otherwise, only results for Example 1 are given.   
 
-28.	Example1.mat — Contains the numerical results for Example 1.
-29.	Example1InputData.mat — Contains the initial designs and initial data for Example 1.
-30.	Example1Size2.mat — Contains the numerical results used to create Figure H.4 of Example 1. 
-31.	Example1Size2InputData.mat — Contains the initial designs and initial data used to create Figure H.4 of Example 1.
-32.	Example1GridData26.mat — Gives the LF and HF simulator output data on a 26^3-point grid for Example 1.
-33.	Example2.mat — Contains the numerical results for Example 2.
-34.	Example2InputData.mat — Contains the initial designs and initial data for Example 2.
-35.	Example2Size2.mat — Contains the numerical results used to create Figure I.3 of Example 2.
-36.	Example2Size2InputData.mat — Contains the initial designs and initial data used to create Figure I.3 of Example 2.
-37.	Example3.mat — Contains the numerical results for Example 3.
-38.	Example3InputData.mat — Contains the initial designs and initial data for Example 3.
-39.	Example3Size2.mat — Contains the numerical results used to create Figure F.6 of Example 3. 
-40.	Example3Size2InputData.mat — Contains the initial designs and initial data used to create Figure F.6 of Example 3.
-41.     DataforAppendixJ_SVD.mat — Contains data used to obtain numerical results for the SVD method reported in Appendix J.
-42.     DataforAppendixJ_SVDAGP.mat — Contains data used to obtain numerical results for the SVD-AGP method reported in Appendix J.
-43.     Example1TrueMLE.mat — Contains the true MLE of the calibration parameter vector and value of the HF SSE at the true MLE of the calibration parameter vector for Example 1.
-44.     Example2TrueMLE.mat — Contains the true MLE of the calibration parameter vector and value of the HF SSE at the true MLE of the calibration parameter vector for Example 2. 
+29.	Example1.mat — Contains the numerical results for Example 1.
+30.	Example1InputData.mat — Contains the initial designs and initial data for Example 1.
+31.	Example1Size2.mat — Contains the numerical results used to create Figure H.4 of Example 1. 
+32.	Example1Size2InputData.mat — Contains the initial designs and initial data used to create Figure H.4 of Example 1.
+33.	Example1GridData26.mat — Gives the LF and HF simulator output data on a 26^3-point grid for Example 1.
+34.	Example2.mat — Contains the numerical results for Example 2.
+35.	Example2InputData.mat — Contains the initial designs and initial data for Example 2.
+36.	Example2Size2.mat — Contains the numerical results used to create Figure I.3 of Example 2.
+37.	Example2Size2InputData.mat — Contains the initial designs and initial data used to create Figure I.3 of Example 2.
+38.	Example3.mat — Contains the numerical results for Example 3.
+39.	Example3InputData.mat — Contains the initial designs and initial data for Example 3.
+40.	Example3Size2.mat — Contains the numerical results used to create Figure F.6 of Example 3. 
+41.	Example3Size2InputData.mat — Contains the initial designs and initial data used to create Figure F.6 of Example 3.
+42.     DataforAppendixJ_SVD.mat — Contains data used to obtain numerical results for the SVD method reported in Appendix J.2.
+43.     DataforAppendixJ_SVDAGP.mat — Contains data used to obtain numerical results for the SVD-AGP method reported in Appendix J.2.
+44.     Example1TrueMLE.mat — Contains the true MLE of the calibration parameter vector and value of the HF SSE at the true MLE of the calibration parameter vector for Example 1.
+45.     Example2TrueMLE.mat — Contains the true MLE of the calibration parameter vector and value of the HF SSE at the true MLE of the calibration parameter vector for Example 2. 
 
 %%%%%%%%%%%%%%%%%% Steps for replicating the results for Example 1 %%%%%%%%%%%%%%%%%%%
 Step 1: Install EnergyPlus 9.4.0 in the folder C:\EnergyPlusV9-4-0.
@@ -130,5 +130,5 @@ Step 2: Run MainExample3.m and MainExample3Size2.m.
 Steps: Run ApproximateSh_SVD.m and then ApproximateSh_SVDAGP.m. Finally, run AnalyzeApproximateShData.m.
 
 Note: 
-To check for differences in numerical computation results between computers, you may want to check if the simulator output values in the following data files remain the same on your computer: Example1InputData.mat, Example1Size2InputData.mat, Example1GridData26, Example2InputData.mat, Example2Size2InputData.mat, Example2TrueMLE.mat, Example3InputData.mat, Example3Size2InputData.mat.
-For example, the values in MultiDataInput(id).Yl, MultiDataInput(id).Yh, and SingleDataInput(id).Yh contain simulator outputs at the points in MultiDataInput(id).Dl, MultiDataInput(id).Dh, and SingleDataInput(id).Dh for id=1 to id=100. If the output values are different, you may want to recompute all the output values.
+To check for differences in numerical computation results between computers, you may want to check if the simulator output values in the following data files remain the same on your computer: Example1InputData.mat, Example1Size2InputData.mat, Example1GridData26, Example2InputData.mat, Example2Size2InputData.mat, Example3InputData.mat, Example3Size2InputData.mat.
+For example, the values in MultiDataInput(id).Yl, MultiDataInput(id).Yh, and SingleDataInput(id).Yh contain simulator outputs at the points in MultiDataInput(id).Dl, MultiDataInput(id).Dh, and SingleDataInput(id).Dh, respectively, for id=1 to id=100. If the output values are different, you may want to recompute all the output values.
