@@ -346,6 +346,7 @@ set(gca,'YScale','log','FontSize',FontSize1,'FontWeight','bold','LineWidth',3);
 ylabel('Average $S_h(\hat{\textbf{x}}^*_{\mathbf{ML}})-$0.093939','Interpreter','latex','FontSize',32);
 leg=legend(Labels,'NumColumns',3,'Location','northeast');
 leg.ItemTokenSize=[74,50];
+ax = gca; ax.YMinorTick = 'off';
 yticks([0.3 10.^[0:2]])
 ylim([0.25 170])
 yticklabels({'0.3 ','10^0 ','10^1 ','10^2 '})
@@ -380,6 +381,7 @@ leg=legend(Labels,'NumColumns',3,'Location','northeast');
 leg.ItemTokenSize=[74,50];
 set(findobj(gcf,'type','axes'),'FontWeight','Bold','LineWidth',3);
 set(gca,'YScale','log')
+ax = gca; ax.YMinorTick = 'off';
 yticks(0.01*2.^[1:5])
 ylim([0.019 0.52])
 yticklabels({'0.02 ','0.04 ','0.08 ','0.16 ','0.32 '})

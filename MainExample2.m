@@ -208,8 +208,9 @@ set(gca,'YScale','log','FontSize',FontSize1,'FontWeight','bold','LineWidth',3);
 ylabel('Average $S_h(\hat{\textbf{x}}^*_{\mathbf{ML}})-$2551.9','Interpreter','latex','FontSize',32);
 leg=legend(Labels,'NumColumns',3,'Location','northeast');
 leg.ItemTokenSize=[74,50];
+ax = gca; ax.YMinorTick = 'off';
 yticks([10.^[3:6]])
-ylim([1000 3000000])
+ylim([780 3400000])
 xticks(InitialBudget:2:Budget)
 xlim([InitialBudget-0.1,Budget+0.1])
 set(gca,'TickLabelInterpreter','tex');
